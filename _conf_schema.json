@@ -1,0 +1,26 @@
+{
+    "sign_time": {
+        "description": "设置签到时间",
+        "type": "string",
+        "hint": "HH:mm(:ss)",
+        "default": "21:30"
+    },
+    "is_active": {
+        "description": "是否启用",
+        "type": "bool",
+        "hint": "是否启用",
+        "default": true
+    },
+    "admin": {
+        "description": "设置管理员",
+        "type": "string",
+        "hint": "qq号",
+        "default": "736644851"
+    },
+    "group_id": {
+        "description": "通知群号",
+        "type": "string",
+        "hint": "群号",
+        "default": "1065470043"
+    }
+}
