@@ -1,17 +1,15 @@
 from sqlalchemy import create_engine, text
-from user import User
-# ---------------- 数据库连接 ----------------
+from .user import User
 engine = create_engine(
-    "mysql+pymysql://root:qq736644851@localhost:3306/ECoin?charset=utf8mb4",
+    "mysql+pymysql://root:qq736644851@mysql:3306/ECoin?charset=utf8mb4",
     echo=False,
     future=True
 )
 
-# ---------------- 基础函数 ----------------
 def get_user(user_id: int) -> User | None:
     """根据用户ID获取完整用户对象"""
     with engine.connect() as conn:
-        result = conn.execute(text("SELECT id, e_coin, stu_id, is_admin ,sign_date FROM users WHERE id = :id"), {"id": user_id}).fetchone()
+        result = conn.execute(text("SELECT id, e_coin, stu_id, is_admin, sign_date, user_name FROM users WHERE id = :id"), {"id": user_id}).fetchone()
         if not result:
             return None
         return User(*result)
@@ -30,27 +28,27 @@ def update_balance(user_id: int, amount: int) -> int:
         return 1  # 成功
 
 
-def create_user(user_id: int, stu_id: int | None = None, initial_balance: int = 0, is_admin: bool = False) -> bool:
+def create_user(user_id: int, stu_id: int | None = None, initial_balance: int = 0, is_admin: bool = False, sign_date: str = "2025-01-01") -> bool:
     """创建新用户"""
     with engine.begin() as conn:
         exists = conn.execute(text("SELECT 1 FROM users WHERE id = :id"), {"id": user_id}).fetchone()
         if exists:
             return False
         conn.execute(
-            text("INSERT INTO users (id, e_coin, stu_id, is_admin) VALUES (:id, :coin, :stu, :adm)"),
-            {"id": user_id, "coin": initial_balance, "stu": stu_id, "adm": int(is_admin)}
+            text("INSERT INTO users (id, e_coin, stu_id, is_admin, sign_date, user_name) VALUES (:id, :coin, :stu, :adm, :sign_date, :uname)"),
+            {"id": user_id, "coin": initial_balance, "stu": stu_id, "adm": int(is_admin), sign_date: sign_date, "uname": None}
         )
         return True
 
 def get_user_list() -> list[User]:
     """获取所有用户列表"""
     with engine.connect() as conn:
-        results = conn.execute(text("SELECT id, e_coin, stu_id, is_admin, sign_date FROM users")).fetchall()
+        results = conn.execute(text("SELECT id, e_coin, stu_id, is_admin, sign_date, user_name FROM users")).fetchall()
         return [User(*row) for row in results]
 def get_user_by_stu_id(stu_id: int) -> User | None:
     """根据学号获取用户对象"""
     with engine.connect() as conn:
-        result = conn.execute(text("SELECT id, e_coin, stu_id, is_admin, sign_date FROM users WHERE stu_id = :s"), {"s": stu_id}).fetchone()
+        result = conn.execute(text("SELECT id, e_coin, stu_id, is_admin, sign_date, user_name FROM users WHERE stu_id = :s"), {"s": stu_id}).fetchone()
         return User(*result) if result else None
 def get_sign_date(id: int) -> str | None:
     """获取用户最后签到日期"""

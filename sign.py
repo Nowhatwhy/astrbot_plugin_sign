@@ -3,9 +3,9 @@ import random
 import asyncio
 import aiohttp
 import hashlib
-import db
+from . import db
 from datetime import datetime
-from result import Result
+from .result import Result
 taskId = '333c5a2a7b291cb02d333fcf18f60843'
 DEFAULT_PASSWD = "Ahgydx@920"
 
@@ -89,13 +89,14 @@ async def qd(user_id, user_password=DEFAULT_PASSWD):
 # 下面三个函数仅把调用 qd 的部分改成了 await，其它逻辑/返回完全不变
 async def sign(user)-> Result:
     """输入用户，执行签到"""
-    result = Result(False, user.id if user else -1, "")
+    result = Result(False, user.id if user else -1, user.user_name if user else "", "")
     if not user:
         result.success = False
         result.mes = "用户不存在，请先创建用户"
         return result
 
     result.user_id = user.id
+    result.user_name = user.user_name
     if user.e_coin < 5:
         result.success = False
         result.mes = "E币余额不足，至少需要5E币才能签到"
