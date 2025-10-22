@@ -28,7 +28,7 @@ def update_balance(user_id: int, amount: int) -> int:
         return 1  # 成功
 
 
-def create_user(user_id: int, stu_id: int | None = None, initial_balance: int = 0, is_admin: bool = False, sign_date: str = "2025-01-01") -> bool:
+def create_user(user_id: int, stu_id: int, user_name: str, initial_balance: int = 0, is_admin: bool = False, sign_date: str = "2025-01-01") -> bool:
     """创建新用户"""
     with engine.begin() as conn:
         exists = conn.execute(text("SELECT 1 FROM users WHERE id = :id"), {"id": user_id}).fetchone()
@@ -36,7 +36,7 @@ def create_user(user_id: int, stu_id: int | None = None, initial_balance: int = 
             return False
         conn.execute(
             text("INSERT INTO users (id, e_coin, stu_id, is_admin, sign_date, user_name) VALUES (:id, :coin, :stu, :adm, :sign_date, :uname)"),
-            {"id": user_id, "coin": initial_balance, "stu": stu_id, "adm": int(is_admin), sign_date: sign_date, "uname": None}
+            {"id": user_id, "coin": initial_balance, "stu": stu_id, "adm": int(is_admin), sign_date: sign_date, "uname": user_name}
         )
         return True
 
@@ -62,6 +62,15 @@ def update_sign_date(id: int, sign_date: str) -> None:
             text("UPDATE users SET sign_date = :date WHERE id = :id"),
             {"date": sign_date, "id": id}
         )
+def update(stu_id: int, user_name: str)-> bool:
+    """更新用户学号和姓名"""
+    with engine.begin() as conn:
+        result = conn.execute(
+            text("UPDATE users SET stu_id = :stu, user_name = :uname WHERE stu_id = :s"),
+            {"stu": stu_id, "uname": user_name, "s": stu_id}
+        )
+        return result.rowcount > 0  # 返回是否有行被更新
+
 if __name__ == "__main__":
     # 测试代码
     print(get_sign_date(736644851))
