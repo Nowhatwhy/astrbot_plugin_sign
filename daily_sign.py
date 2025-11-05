@@ -11,7 +11,7 @@ def daily_sign(user_id: int) -> Result:
         return result
     result.user_id = user.id
     result.user_name = user.user_name   
-    if user.sign_date == datetime.date.today().isoformat():
+    if user.sign_date is not None and str(user.sign_date) == datetime.date.today().isoformat():
         result.mes = "今日已签到，无需重复签到"
         return result
     db.update_sign_date(user.id, datetime.date.today().isoformat())

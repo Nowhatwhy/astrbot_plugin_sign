@@ -3,14 +3,30 @@ import random
 import asyncio
 import aiohttp
 import hashlib
-from . import db
+import db
 from datetime import datetime
-from .result import Result
+from result import Result
+from user import User
 taskId = '333c5a2a7b291cb02d333fcf18f60843'
 DEFAULT_PASSWD = "Ahgydx@920"
+async def refresh_token(user_id: int):
+    user = db.get_user(user_id)
+    if not user:
+        return -1
+    res = 1
+    for _ in range(5):
+        res = await get_flysource_auth(user)
+        if res != 1 and res != 0:
+            break
+    if res != 1 and res!=0:
+        user.token=res
+        db.update_user(user)
+        return 1
+    return 0
 
 # 用户认证函数（异步）
-async def get_flysource_auth(user_id, user_password):
+async def get_flysource_auth(user: User, user_password=DEFAULT_PASSWD):
+    user_id = user.stu_id
     user_password_hash = hashlib.md5(user_password.encode()).hexdigest()
     url = (
         "https://xskq.ahut.edu.cn/api/flySource-auth/oauth/token"
@@ -36,17 +52,25 @@ async def get_flysource_auth(user_id, user_password):
     async with aiohttp.ClientSession() as session:
         async with session.post(url, data=data, headers=headers) as resp:
             js = await resp.json()
-            return js['access_token']
-
+            #return js['access_token']
+    response = await qd(user, js['access_token'])
+    print(response)
+    if response == "登录遇到问题":
+        return 1
+    if response.get('code') == 401:
+        return 0
+    return js['access_token']
 # 签到函数（异步）
-async def qd(user_id, user_password=DEFAULT_PASSWD):
-    try:
-        flysource_auth = await get_flysource_auth(user_id, user_password)
-    except Exception as e:
-        print(f"用户 {user_id} 登录失败: {e}")
-        return '登录遇到问题'
-
-    await asyncio.sleep(random.random())
+async def qd(user:User, flysource_auth=None):
+    # try:
+    #     flysource_auth = await get_flysource_auth(user_id, user_password)
+    # except Exception as e:
+    #     print(f"用户 {user_id} 登录失败: {e}")
+    #     return '登录遇到问题'
+    user_id = user.stu_id
+    if not flysource_auth:
+        flysource_auth = user.token
+    #await asyncio.sleep(random.random())
 
     url = 'https://xskq.ahut.edu.cn/api/flySource-yxgl/dormSignRecord/add'
     headers = {
@@ -87,7 +111,7 @@ async def qd(user_id, user_password=DEFAULT_PASSWD):
             return js
 
 # 下面三个函数仅把调用 qd 的部分改成了 await，其它逻辑/返回完全不变
-async def sign(user)-> Result:
+async def sign(user:User)-> Result:
     """输入用户，执行签到"""
     result = Result(False, user.id if user else -1, user.user_name if user else "", "")
     if not user:
@@ -102,7 +126,7 @@ async def sign(user)-> Result:
         result.mes = "E币余额不足，至少需要5E币才能签到"
         return result
 
-    res = await qd(user.stu_id, DEFAULT_PASSWD)
+    res = await qd(user)
 
     if res == '登录遇到问题':
         result.success = False
@@ -122,6 +146,8 @@ async def sign(user)-> Result:
 async def sign_single(id: int):
     """输入id，执行签到"""
     user = db.get_user(id)
+    if not user:
+        return
     return await sign(user)
 
 async def sign_all():
@@ -135,4 +161,4 @@ async def sign_all():
 
 if __name__ == "__main__":
     # 示例：单人签到
-    print(asyncio.run(sign_single(736644851)))
+    print(asyncio.run(get_flysource_auth(db.get_user(736644851)))) # type: ignore

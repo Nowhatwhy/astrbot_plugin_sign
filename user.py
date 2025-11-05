@@ -1,11 +1,16 @@
+from dataclasses import dataclass, asdict
+from typing import Optional
+
+@dataclass
 class User:
-    def __init__(self, id, stu_id, user_name, e_coin=0, is_admin=False, sign_date=None):
-        self.id = id
-        self.e_coin = e_coin
-        self.stu_id = stu_id
-        self.is_admin = is_admin
-        self.sign_date = sign_date
-        self.user_name = user_name
+    id: int
+    stu_id: int = 0
+    user_name: str = ""
+    e_coin: int = 0
+    is_admin: bool = False
+    sign_date: Optional[str] = None   # 也可以用 date
+    token: str = ""
+
     def to_dict(self):
         return {
             "用户ID": self.id,
@@ -15,7 +20,5 @@ class User:
             "最后签到日期": self.sign_date,
             "姓名": self.user_name
         }
-    def __repr__(self):
-        return f"User(id={self.id}, user_name={self.user_name}, e_coin={self.e_coin}, stu_id={self.stu_id}, is_admin={self.is_admin}, sign_date={self.sign_date})"
     def __str__(self):
         return f"用户ID: {self.id}\n姓名: {self.user_name}\nE币余额: {self.e_coin}\n学号: {self.stu_id}\n是否管理员: {self.is_admin}\n最后签到日期: {self.sign_date}"
