@@ -20,10 +20,4 @@ def daily_sign(user_id: int) -> Result:
     result.mes = f"签到成功，获得10E币，当前余额为{total}E币"
     result.success = True
     return result
-
-    # 假设签到成功
-    db.update_balance(user.id, -5)  # 扣除5 E币
-    result.success = True
-    result.mes = "扣除5E币作为签到费用"
-    return result
     

@@ -24,7 +24,7 @@ from . import daily_sign
 from datetime import datetime, timedelta
 import random
 _TIME_RE = re.compile(r"^\s*(\d{1,2})[:：](\d{1,2})(?:[:：](\d{1,2}))?\s*$")
-@register("astrbot_plugin_sign", "Nowhatwhy", "一个简单签到", "1.0.0")
+@register("astrbot_plugin_sign", "Nowhatwhy", "一个简单签到", "1.1.0")
 class MyPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
@@ -86,8 +86,9 @@ class MyPlugin(Star):
                     break
             except asyncio.TimeoutError:
                 pass  # 超时，继续执行签到任务
+            await sign.refresh_token_all()
             await self.send_sign_message(await sign.sign_all())
-    
+
     # 注册指令的装饰器。指令名为 helloworld。注册成功后，发送 `/helloworld` 就会触发这个指令，并回复 `你好, {user_name}!`
     @filter.command("helloworld")
     async def helloworld(self, event: AiocqhttpMessageEvent):
@@ -333,6 +334,28 @@ class MyPlugin(Star):
         sign.db.update_balance(from_user.id, -amt)
         sign.db.update_balance(to_user.id, amt)
         yield event.plain_result(f"转账成功！你向用户 {to_user.user_name}（ID: {to_user.id}）转账了 {amt} E币。\n你的新余额为 {from_user_balance} E币。\n对方的新余额为 {to_user_balance} E币。")
+    @filter.command("查询电费")
+    async def query_electricity_fee(self, event: AiocqhttpMessageEvent, type: str = '电费'):
+        """查询电费余额"""
+        headers = {
+            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) EdgiOS/121.0.2277.107 Version/17.0 Mobile/15E148 Safari/604.1",
+            "Cookie": "ASP.NET_SessionId=mcwdx3evuy4f5d0ry1m0fqtk; EF.TerminalId=b230fd753c6947708f39d71e155dffe8; .ASPXAUTH=3CBC84A53432CA9AE7E4C14DB04C900890F15472841CADC6F8B9482731F56E872C63644A1B531EF12CD183F69D6CB813EC7DA228325861D5CBBD7911A26CACECDFFE5D7A79EFF14CDBC256CA7670BDCF6F218310B94B583E9BEF27BC05AB4ECF22EB5E2E8E80E8B42FD34379A42162BD77499CAA9DC33EC2417F3241484CA25021F68026D6BB4768B607544A8F308D46"
+        }
+        data = {
+            "xiaoqu": "NewS",
+            "ld_Name": "东校区E号学生宿舍楼",
+            "ld_Id": "15",
+            "Room_No": "219",
+            "etype": "" if type == "电费" else ""
+        }
+        url = "https://pay.ahut.edu.cn/Charge/GetIMS_AHUTService"
+        async with sign.aiohttp.ClientSession() as session:
+            async with session.post(url, data=data, headers=headers) as resp:
+                js = await resp.json()
+                if js.get('Code') != 0:
+                    yield event.plain_result(f"查询失败，错误信息：{js.get('Message')}")
+                    return
+                yield event.plain_result(str(js))
     async def terminate(self):
         """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
         logger.info("插件正在终止...")

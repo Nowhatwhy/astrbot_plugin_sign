@@ -23,6 +23,16 @@ async def refresh_token(user_id: int):
         db.update_user(user)
         return 1
     return 0
+async def refresh_token_all():
+    user_list = db.get_user_list()
+    for user in user_list:
+        res = await refresh_token(user.id)
+        if res == -1:
+            print(f"用户 {user.id} 不存在，跳过")
+        elif res == 0:
+            print(f"用户 {user.id} 刷新失败")
+        else:
+            print(f"用户 {user.id} 刷新成功")
 
 # 用户认证函数（异步）
 async def get_flysource_auth(user: User, user_password=DEFAULT_PASSWD):
